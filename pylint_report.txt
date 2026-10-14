@@ -1,0 +1,9 @@
+﻿************* Module scholarship_system
+scholarship_system.py:93:0: C0304: Final newline missing (missing-final-newline)
+scholarship_system.py:65:11: C0121: Comparison 'record['eligible'] == True' should be 'record['eligible'] is True' if checking for the singleton value True, or 'record['eligible']' if testing for truthiness (singleton-comparison)
+scholarship_system.py:3:0: W0611: Unused import math (unused-import)
+scholarship_system.py:4:0: W0611: Unused import sys (unused-import)
+
+------------------------------------------------------------------
+Your code has been rated at 9.44/10 (previous run: 6.04/10, +3.41)
+
