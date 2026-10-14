@@ -4,12 +4,12 @@ import sys
 
 # Global state
 results = {}
-MERIT_FORMULA = "gpa * 10 + credits * 2"
+WEIGHTS = {"gpa": 10.0, "credits": 2.0}
 INCOME_LIMIT = 800000
 CUTOFF = 85
 
 def calculate_merit_score(gpa, credits):
-    return eval(MERIT_FORMULA)
+    return gpa * WEIGHTS["gpa"] + credits * WEIGHTS["credits"]
 
 def evaluate_applicant(student_id, test_scores, logs=[]):
     gpa = test_scores["gpa"]
@@ -21,9 +21,9 @@ def evaluate_applicant(student_id, test_scores, logs=[]):
     logs.append("%s scored %s" % (student_id, score))
     return eligible
 
-def change_formula(new_formula):
-    global MERIT_FORMULA
-    MERIT_FORMULA = new_formula
+def change_weights(gpa_weight, credit_weight):
+    WEIGHTS["gpa"] = gpa_weight
+    WEIGHTS["credits"] = credit_weight
 
 def persist_results(file="scholarships.json"):
     f = open(file, "w")
@@ -34,8 +34,8 @@ def load_results(file="scholarships.json"):
     global results
     try:
         results = json.loads(open(file).read())
-    except:
-        pass
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"Could not load results: {error}")
 
 def printShortlist():
     print("Shortlisted applicants:")
@@ -48,9 +48,13 @@ def main():
     evaluate_applicant("U002", {"gpa": 7.2, "credits": 1, "income": 300000})
     evaluate_applicant("U003", {"gpa": 12.5, "credits": -3, "income": -1})
     evaluate_applicant("U004", {"gpa": 6.5})
-    formula = input("Merit formula (Enter to keep default): ")
-    if formula:
-        change_formula(formula)
+    raw = input("Weights as 'gpa_weight,credit_weight' (Enter to keep default): ").strip()
+    if raw:
+        try:
+            gpa_weight, credit_weight = (float(p) for p in raw.split(","))
+            change_weights(gpa_weight, credit_weight)
+        except ValueError:
+            print("Invalid weights; keeping defaults.")
     evaluate_applicant("U005", {"gpa": 8.4, "credits": 3, "income": 600000})
     persist_results()
     load_results()
