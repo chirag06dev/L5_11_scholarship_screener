@@ -1,4 +1,13 @@
-# Lab 5: Issue Log
+# Software Engineering
+
+## Lab 5
+
+**Name:** Chirag Arun Yadwad  
+**SRN:** PES2UG24CS136
+
+---
+
+# Static Code Analysis: Issue Log
 
 File analysed: `scholarship_system.py` (line numbers refer to the original version).
 Reports: `reports/before/` (original) and `reports/after/` (final).
