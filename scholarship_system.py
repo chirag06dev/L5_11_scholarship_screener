@@ -1,14 +1,13 @@
 import ast
 import json
-import math
 import operator
-import sys
 
 # Global state
 results = {}
 MERIT_FORMULA = "gpa * 10 + credits * 2"
 INCOME_LIMIT = 800000
 CUTOFF = 85
+
 
 ALLOWED_OPERATORS = {
     ast.Add: operator.add,
@@ -30,7 +29,8 @@ def safe_eval(node, variables):
     if isinstance(node, ast.BinOp) and type(node.op) in ALLOWED_OPERATORS:
         return ALLOWED_OPERATORS[type(node.op)](
             safe_eval(node.left, variables), safe_eval(node.right, variables))
-    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+    if isinstance(node, ast.UnaryOp) and isinstance(
+            node.op, (ast.UAdd, ast.USub)):
         value = safe_eval(node.operand, variables)
         return value if isinstance(node.op, ast.UAdd) else -value
     raise ValueError("Unsupported element in merit formula")
@@ -39,6 +39,7 @@ def safe_eval(node, variables):
 def calculate_merit_score(gpa, credits):
     tree = ast.parse(MERIT_FORMULA, mode="eval")
     return safe_eval(tree, {"gpa": gpa, "credits": credits})
+
 
 def evaluate_applicant(student_id, test_scores, logs=[]):
     gpa = test_scores["gpa"]
@@ -50,20 +51,24 @@ def evaluate_applicant(student_id, test_scores, logs=[]):
     logs.append("%s scored %s" % (student_id, score))
     return eligible
 
+
 def change_formula(new_formula):
     global MERIT_FORMULA
     try:
         # Reject unsafe or malformed formulas before they are stored
-        safe_eval(ast.parse(new_formula, mode="eval"), {"gpa": 0, "credits": 0})
+        tree = ast.parse(new_formula, mode="eval")
+        safe_eval(tree, {"gpa": 0, "credits": 0})
     except (SyntaxError, ValueError, ZeroDivisionError):
         print("Invalid merit formula, keeping the current one.")
         return
     MERIT_FORMULA = new_formula
 
+
 def persist_results(file="scholarships.json"):
     f = open(file, "w")
     f.write(json.dumps(results))
     f.close()
+
 
 def load_results(file="scholarships.json"):
     global results
@@ -74,11 +79,13 @@ def load_results(file="scholarships.json"):
     except json.JSONDecodeError:
         print("Saved results file is corrupt, ignoring it.")
 
+
 def printShortlist():
     print("Shortlisted applicants:")
     for r in results:
-        if results[r]["eligible"] == True:
+        if results[r]["eligible"]:
             print(" ", r, "score =", results[r]["score"])
+
 
 def main():
     evaluate_applicant("U001", {"gpa": 9.1, "credits": 4, "income": 450000})
@@ -92,5 +99,6 @@ def main():
     persist_results()
     load_results()
     printShortlist()
+
 
 main()
