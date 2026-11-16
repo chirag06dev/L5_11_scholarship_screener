@@ -1,5 +1,7 @@
+import ast
 import json
 import math
+import operator
 import sys
 
 # Global state
@@ -8,8 +10,35 @@ MERIT_FORMULA = "gpa * 10 + credits * 2"
 INCOME_LIMIT = 800000
 CUTOFF = 85
 
+ALLOWED_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+}
+
+
+def safe_eval(node, variables):
+    # Evaluate a small arithmetic expression without using eval().
+    # Only numbers, the given variable names and + - * / are accepted.
+    if isinstance(node, ast.Expression):
+        return safe_eval(node.body, variables)
+    if isinstance(node, ast.Constant) and type(node.value) in (int, float):
+        return node.value
+    if isinstance(node, ast.Name) and node.id in variables:
+        return variables[node.id]
+    if isinstance(node, ast.BinOp) and type(node.op) in ALLOWED_OPERATORS:
+        return ALLOWED_OPERATORS[type(node.op)](
+            safe_eval(node.left, variables), safe_eval(node.right, variables))
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        value = safe_eval(node.operand, variables)
+        return value if isinstance(node.op, ast.UAdd) else -value
+    raise ValueError("Unsupported element in merit formula")
+
+
 def calculate_merit_score(gpa, credits):
-    return eval(MERIT_FORMULA)
+    tree = ast.parse(MERIT_FORMULA, mode="eval")
+    return safe_eval(tree, {"gpa": gpa, "credits": credits})
 
 def evaluate_applicant(student_id, test_scores, logs=[]):
     gpa = test_scores["gpa"]
@@ -23,6 +52,12 @@ def evaluate_applicant(student_id, test_scores, logs=[]):
 
 def change_formula(new_formula):
     global MERIT_FORMULA
+    try:
+        # Reject unsafe or malformed formulas before they are stored
+        safe_eval(ast.parse(new_formula, mode="eval"), {"gpa": 0, "credits": 0})
+    except (SyntaxError, ValueError, ZeroDivisionError):
+        print("Invalid merit formula, keeping the current one.")
+        return
     MERIT_FORMULA = new_formula
 
 def persist_results(file="scholarships.json"):
@@ -34,8 +69,10 @@ def load_results(file="scholarships.json"):
     global results
     try:
         results = json.loads(open(file).read())
-    except:
-        pass
+    except FileNotFoundError:
+        print("No saved results found, starting empty.")
+    except json.JSONDecodeError:
+        print("Saved results file is corrupt, ignoring it.")
 
 def printShortlist():
     print("Shortlisted applicants:")
